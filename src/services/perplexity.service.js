@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { getSecret } = require('../utils/secrets');
 const contentStorage = require('../utils/storage');
+const { secretNames } = require('../config');
 
 class PerplexityService {
   constructor() {
@@ -10,7 +11,7 @@ class PerplexityService {
 
   async initialize() {
     try {
-      this.apiKey = await getSecret('PERPLEXITY_API_KEY');
+      this.apiKey = await getSecret(secretNames.perplexityKey);
       console.log('[PERPLEXITY] Service initialized successfully');
       return true;
     } catch (error) {
@@ -19,35 +20,10 @@ class PerplexityService {
     }
   }
 
-  async generateKeywordVariations(keyword) {
-    const prompt = `Generate a list of long-tail keyword variations related to '${keyword}'. Please provide at least 5 variations.`;
-    return this.makeRequest(prompt, 'keyword_variations');
-  }
-
-  async analyzeSearchIntent(keyword) {
-    const prompt = `Explain and group the search intents behind queries related to '${keyword}'. Categorize them into the following groups: Valuation, Historical, and Identification.`;
-    return this.makeRequest(prompt, 'search_intent');
-  }
-
-  async getContextualExpansion(keyword) {
-    const prompt = `List common questions, topics, or phrases that people associate with '${keyword}'. Include any nuances that might help in crafting detailed content.`;
-    return this.makeRequest(prompt, 'contextual_expansion');
-  }
-
-  async generateContentTopics(keyword) {
-    const prompt = `Propose several content topics for an online antique appraisal service, based on emerging trends and popular queries related to '${keyword}'. Ensure the topics are SEO-friendly and conversion-focused.`;
-    return this.makeRequest(prompt, 'content_topics');
-  }
-
-  async complementStructuredData(keyword, structuredData) {
-    const prompt = `Given the following structured data from SERP research: ${JSON.stringify(structuredData)}, and the seed keyword '${keyword}', provide additional insights and keyword suggestions that could enhance a content strategy for antique appraisals.`;
-    return this.makeRequest(prompt, 'complementary_data');
-  }
-
   async makeRequest(prompt, type, options = {}) {
     const {
       model = 'pplx-70b-online',
-      maxTokens = 250,
+      maxTokens = 2000,
       temperature = 0.1,
       topP = 0.9
     } = options;
@@ -58,7 +34,7 @@ class PerplexityService {
       // For art appraiser data, use a structured prompt
       const systemPrompt = type === 'art_appraiser' ? 
         'You are an expert art appraiser data analyst. Return ONLY valid JSON matching the exact schema provided in the prompt.' : 
-        'You are a keyword research assistant.';
+        'You are an art appraiser data analyst.';
 
       const response = await axios.post(
         this.apiUrl,
@@ -104,98 +80,98 @@ class PerplexityService {
   }
 
   async getArtAppraiserData(city, state) {
-    const prompt = `Create a detailed art appraiser directory entry for ${city}, ${state}. 
+    const prompt = `Create a detailed art appraiser directory entry for ${city}, ${state}. Use realistic but fictional data.
 
 Return ONLY a valid JSON object with EXACTLY this structure:
 {
   "city": "${city}",
   "state": "${state}",
   "seo": {
-    "title": "SEO-optimized title",
-    "description": "150-160 character meta description",
-    "keywords": ["array", "of", "keywords"],
+    "title": "Art Appraisers in ${city} | Expert Art Valuation Services",
+    "description": "Find certified art appraisers in ${city}, ${state}. Get expert art valuations, authentication services, and professional advice for your art collection.",
+    "keywords": ["art appraisers ${city.toLowerCase()}", "${city.toLowerCase()} art valuation", "art authentication ${city.toLowerCase()}", "fine art appraisal ${state.toLowerCase()}"],
     "schema": {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
-      "name": "string",
-      "description": "string",
+      "name": "Art Appraisers in ${city}",
+      "description": "Find certified art appraisers in ${city}, ${state}. Professional art valuation and authentication services.",
       "areaServed": {
         "@type": "City",
-        "name": "string",
-        "state": "string"
+        "name": "${city}",
+        "state": "${state}"
       }
     }
   },
   "appraisers": [
     {
-      "id": "string",
-      "name": "string",
-      "image": "url",
+      "id": "generated-unique-id",
+      "name": "Business Name",
+      "image": "https://images.unsplash.com/photo-relevant-to-art-appraisal",
       "rating": number,
       "reviewCount": number,
-      "address": "string",
+      "address": "Full Address with ZIP",
       "specialties": ["array"],
-      "phone": "string",
-      "email": "string",
-      "website": "url",
+      "phone": "(XXX) XXX-XXXX",
+      "email": "contact@domain.com",
+      "website": "https://domain.com",
       "seo": {
         "schema": {
           "@context": "https://schema.org",
           "@type": "LocalBusiness",
-          "name": "string",
-          "image": "url",
+          "name": "Business Name",
+          "image": "https://images.unsplash.com/photo-relevant-to-art-appraisal",
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "string",
-            "addressLocality": "string",
-            "addressRegion": "string",
-            "postalCode": "string",
+            "streetAddress": "Street Address",
+            "addressLocality": "${city}",
+            "addressRegion": "${state}",
+            "postalCode": "ZIP Code",
             "addressCountry": "US"
           },
           "geo": {
             "@type": "GeoCoordinates",
-            "latitude": number,
-            "longitude": number
+            "latitude": "Actual Latitude",
+            "longitude": "Actual Longitude"
           },
-          "url": "url",
-          "telephone": "string",
+          "url": "https://domain.com",
+          "telephone": "(XXX) XXX-XXXX",
           "aggregateRating": {
             "@type": "AggregateRating",
-            "ratingValue": "string",
-            "reviewCount": "string"
+            "ratingValue": "4.5-5.0",
+            "reviewCount": "50-200"
           },
           "openingHoursSpecification": [
             {
               "@type": "OpeningHoursSpecification",
-              "dayOfWeek": ["array"],
-              "opens": "string",
-              "closes": "string"
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "opens": "09:00",
+              "closes": "17:00"
             }
           ]
         }
       },
-      "about": "string",
+      "about": "Detailed business description with years of experience and expertise",
       "businessHours": [
         {
-          "day": "string",
-          "hours": "string"
+          "day": "Day Name",
+          "hours": "HH:MM AM - HH:MM PM"
         }
       ],
-      "certifications": ["array"],
+      "certifications": ["Relevant Certifications"],
       "services": [
         {
-          "name": "string",
-          "description": "string",
-          "price": "string"
+          "name": "Service Name",
+          "description": "Detailed service description",
+          "price": "$XXX - $X,XXX"
         }
       ],
       "reviews": [
         {
-          "id": "string",
-          "author": "string",
+          "id": "review-id",
+          "author": "First Name L.",
           "rating": number,
-          "date": "string",
-          "content": "string"
+          "date": "Recent Date",
+          "content": "Detailed review content"
         }
       ]
     }

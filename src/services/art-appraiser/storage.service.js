@@ -2,7 +2,7 @@ const contentStorage = require('../../utils/storage');
 
 class ArtAppraiserStorageService {
   constructor() {
-    this.basePath = 'art-appraiser';
+    this.basePath = 'cities';
   }
 
   /**
@@ -13,7 +13,7 @@ class ArtAppraiserStorageService {
    */
   async storeData(city, state, data) {
     const slug = this.createSlug(city);
-    const filePath = `${this.basePath}/${state.toLowerCase()}/${slug}/data.json`;
+    const filePath = `${this.basePath}/${slug}/data.json`;
 
     console.log('[ART-APPRAISER] Storing data:', {
       city,
@@ -27,9 +27,9 @@ class ArtAppraiserStorageService {
       data,
       timestamp: new Date().toISOString(),
       metadata: {
-        galleries: data.artMarket?.galleries || 0,
-        museums: data.artMarket?.museums || 0,
-        population: data.demographics?.population || 0
+        appraisers: data.appraisers?.length || 0,
+        city,
+        state
       }
     };
 
@@ -49,7 +49,7 @@ class ArtAppraiserStorageService {
    */
   async getData(city, state) {
     const slug = this.createSlug(city);
-    const filePath = `${this.basePath}/${state.toLowerCase()}/${slug}/data.json`;
+    const filePath = `${this.basePath}/${slug}/data.json`;
 
     console.log('[ART-APPRAISER] Retrieving data:', {
       city,
@@ -76,18 +76,19 @@ class ArtAppraiserStorageService {
    * @param {string} state 
    */
   async listCities(state) {
-    const prefix = `${this.basePath}/${state.toLowerCase()}/`;
+    const prefix = `${this.basePath}/`;
     const [files] = await contentStorage.bucket.getFiles({ prefix });
     
     return files
       .filter(file => file.name.endsWith('data.json'))
       .map(file => {
         const parts = file.name.split('/');
-        return {
-          city: parts[parts.length - 2].replace(/-/g, ' '),
+        const cityData = {
+          city: parts[1].replace(/-/g, ' '),
           state: state.toUpperCase(),
           path: file.name
         };
+        return cityData;
       });
   }
 
@@ -98,20 +99,18 @@ class ArtAppraiserStorageService {
   async searchCities(params) {
     const { state, region, population, specialty } = params;
     
-    // Get all cities in state if specified
+    // Get all cities
     let cities = [];
-    if (state) {
-      cities = await this.listCities(state);
-    } else {
-      // Get all states and their cities
-      const [files] = await contentStorage.bucket.getFiles({ prefix: this.basePath });
-      const states = [...new Set(files.map(f => f.name.split('/')[1]))];
-      
-      for (const st of states) {
-        const stateCities = await this.listCities(st);
-        cities.push(...stateCities);
-      }
-    }
+    const [files] = await contentStorage.bucket.getFiles({ prefix: this.basePath });
+    cities = files
+      .filter(file => file.name.endsWith('data.json'))
+      .map(file => {
+        const parts = file.name.split('/');
+        return {
+          city: parts[1].replace(/-/g, ' '),
+          path: file.name
+        };
+      });
 
     // Filter results
     const results = [];
@@ -119,9 +118,8 @@ class ArtAppraiserStorageService {
       const data = await this.getData(city.city, city.state);
       
       // Apply filters
-      if (population && data.demographics.population < population) continue;
-      if (specialty && !data.specialties.includes(specialty)) continue;
-      if (region && data.region !== region) continue;
+      if (state && data.state.toLowerCase() !== state.toLowerCase()) continue;
+      if (specialty && !data.appraisers.some(a => a.specialties.includes(specialty))) continue;
 
       results.push({
         city: city.city,
