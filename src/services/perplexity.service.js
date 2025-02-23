@@ -22,7 +22,7 @@ class PerplexityService {
 
   async makeRequest(prompt, type, options = {}) {
     const {
-      model = 'pplx-70b-online',
+      model = 'sonar',
       maxTokens = 2000,
       temperature = 0.1,
       topP = 0.9
@@ -179,7 +179,7 @@ Return ONLY a valid JSON object with EXACTLY this structure:
 }`;
 
     return this.makeRequest(prompt, 'art_appraiser', {
-      model: 'pplx-70b-online',
+      model: 'sonar',
       maxTokens: 2000,
       temperature: 0.1
     });

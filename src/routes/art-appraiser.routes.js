@@ -10,16 +10,6 @@ router.post('/process-first-city', async (req, res) => {
     const firstCity = citiesData.cities[0];
     console.log('[ART-APPRAISER] Processing first city:', firstCity.name);
 
-    // Check if data already exists
-    const existingData = await storageService.getData(firstCity.name, firstCity.state);
-    if (existingData) {
-      return res.json({
-        success: true,
-        message: 'Data already exists for this city',
-        data: existingData
-      });
-    }
-
     // Generate and store data
     const data = await dataService.getCityData(firstCity.name, firstCity.state);
 
@@ -28,7 +18,7 @@ router.post('/process-first-city', async (req, res) => {
       message: 'Successfully processed first city',
       city: firstCity.name,
       state: firstCity.state,
-      data
+      data: data.data
     });
   } catch (error) {
     console.error('[ART-APPRAISER] Error processing first city:', error);
