@@ -27,7 +27,7 @@ class PerplexityService {
       temperature = 0.1,
       top_p = 0.9,
       presence_penalty = 0,
-      frequency_penalty = 0
+      frequency_penalty = 1
     } = options;
 
     try {
@@ -36,34 +36,34 @@ class PerplexityService {
       const requestData = {
         model,
         messages: [
-          { role: 'system', content: 'You are an expert art appraiser data analyst. Be detailed and precise.' },
+          { role: 'system', content: 'Be precise and concise.' },
           { role: 'user', content: prompt }
         ],
         max_tokens,
         temperature,
         top_p,
-        stream: false,
         presence_penalty,
         frequency_penalty,
         search_domain_filter: null,
         return_images: false,
         return_related_questions: false,
-        search_recency_filter: null,
+        search_recency_filter: "<string>",
         top_k: 0,
+        stream: false,
         response_format: null
       };
 
       console.log('[PERPLEXITY] Request data:', JSON.stringify(requestData, null, 2));
 
-      const response = await axios({
-        method: 'POST',
-        url: this.apiUrl,
+      const response = await axios.post(
+        this.apiUrl,
+        requestData,
+        {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        },
-        data: requestData
+        }
       });
 
       console.log('[PERPLEXITY] Response status:', response.status);
@@ -95,20 +95,12 @@ class PerplexityService {
   async getArtAppraiserData(city, state) {
     const prompt = `Create a detailed directory of art appraisers in ${city}, ${state}. Include:
 
-1. Overview of the art appraisal services in ${city}
-2. List of top art appraisers with:
-   - Business name and contact details
-   - Areas of expertise and specialties
-   - Years of experience
-   - Certifications and credentials
-   - Types of services offered
-   - Typical pricing ranges
-3. Information about:
-   - Business hours
-   - Service areas
-   - Customer reviews and ratings
+1. Overview of art appraisal services in ${city}
+2. Top art appraisers (3-5) with their specialties
+3. Service areas and typical pricing
+4. Contact information and business hours
 
-Use realistic but fictional data and format the response in a clear, readable way.`;
+Keep the response concise and factual.`;
 
     return this.makeRequest(prompt, 'art_appraiser', {
       model: 'sonar',
@@ -116,7 +108,7 @@ Use realistic but fictional data and format the response in a clear, readable wa
       temperature: 0.1,
       top_p: 0.9,
       presence_penalty: 0,
-      frequency_penalty: 0
+      frequency_penalty: 1
     });
   }
 
