@@ -45,7 +45,7 @@ class PerplexityService {
         search_domain_filter: null,
         return_images: false,
         return_related_questions: false,
-        search_recency_filter: "<string>",
+        search_recency_filter: "day",
         top_k: 0,
         stream: false,
         presence_penalty,
@@ -120,7 +120,7 @@ Keep the response concise and factual.`;
 
     return this.makeRequest(prompt, 'art_appraiser', {
       model: 'sonar',
-      max_tokens: 123,
+      max_tokens: 1000,
       temperature: 0.2,
       top_p: 0.9,
       presence_penalty: 0,
