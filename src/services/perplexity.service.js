@@ -23,28 +23,23 @@ class PerplexityService {
   async makeRequest(prompt, type, options = {}) {
     const {
       model = 'sonar',
-      maxTokens = 2000,
+      max_tokens = 2000,
       temperature = 0.1,
-      topP = 0.9
+      top_p = 0.9
     } = options;
 
     try {
       console.log(`[PERPLEXITY] Making ${type} request for prompt:`, prompt.substring(0, 100) + '...');
 
-      // Define system prompt first
-      const systemPrompt = type === 'art_appraiser' ? 
-        'You are an expert art appraiser data analyst. Return ONLY valid JSON matching the exact schema provided in the prompt.' : 
-        'You are an art appraiser data analyst.';
-
       const requestData = {
         model,
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: 'You are an expert art appraiser data analyst. Be detailed and precise.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: maxTokens,
+        max_tokens,
         temperature,
-        top_p: topP,
+        top_p,
         stream: false
       };
 
@@ -76,12 +71,6 @@ class PerplexityService {
 
       console.log('[PERPLEXITY] Raw response:', result.substring(0, 100) + '...');
 
-      // For art appraiser data, validate the JSON structure
-      if (type === 'art_appraiser') {
-        const parsed = JSON.parse(result);
-        this.validateArtAppraiserData(parsed);
-      }
-
       // Cache the result
       await this.cacheResult(prompt, result, type);
 
@@ -94,130 +83,27 @@ class PerplexityService {
   }
 
   async getArtAppraiserData(city, state) {
-    const prompt = `Create a detailed art appraiser directory entry for ${city}, ${state}. Use realistic but fictional data.
+    const prompt = `Create a detailed directory of art appraisers in ${city}, ${state}. Include:
 
-Return ONLY a valid JSON object with EXACTLY this structure:
-{
-  "city": "${city}",
-  "state": "${state}",
-  "seo": {
-    "title": "Art Appraisers in ${city} | Expert Art Valuation Services",
-    "description": "Find certified art appraisers in ${city}, ${state}. Get expert art valuations, authentication services, and professional advice for your art collection.",
-    "keywords": ["art appraisers ${city.toLowerCase()}", "${city.toLowerCase()} art valuation", "art authentication ${city.toLowerCase()}", "fine art appraisal ${state.toLowerCase()}"],
-    "schema": {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "Art Appraisers in ${city}",
-      "description": "Find certified art appraisers in ${city}, ${state}. Professional art valuation and authentication services.",
-      "areaServed": {
-        "@type": "City",
-        "name": "${city}",
-        "state": "${state}"
-      }
-    }
-  },
-  "appraisers": [
-    {
-      "id": "generated-unique-id",
-      "name": "Business Name",
-      "image": "https://images.unsplash.com/photo-relevant-to-art-appraisal",
-      "rating": number,
-      "reviewCount": number,
-      "address": "Full Address with ZIP",
-      "specialties": ["array"],
-      "phone": "(XXX) XXX-XXXX",
-      "email": "contact@domain.com",
-      "website": "https://domain.com",
-      "seo": {
-        "schema": {
-          "@context": "https://schema.org",
-          "@type": "LocalBusiness",
-          "name": "Business Name",
-          "image": "https://images.unsplash.com/photo-relevant-to-art-appraisal",
-          "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "Street Address",
-            "addressLocality": "${city}",
-            "addressRegion": "${state}",
-            "postalCode": "ZIP Code",
-            "addressCountry": "US"
-          },
-          "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": "Actual Latitude",
-            "longitude": "Actual Longitude"
-          },
-          "url": "https://domain.com",
-          "telephone": "(XXX) XXX-XXXX",
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.5-5.0",
-            "reviewCount": "50-200"
-          },
-          "openingHoursSpecification": [
-            {
-              "@type": "OpeningHoursSpecification",
-              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-              "opens": "09:00",
-              "closes": "17:00"
-            }
-          ]
-        }
-      },
-      "about": "Detailed business description with years of experience and expertise",
-      "businessHours": [
-        {
-          "day": "Day Name",
-          "hours": "HH:MM AM - HH:MM PM"
-        }
-      ],
-      "certifications": ["Relevant Certifications"],
-      "services": [
-        {
-          "name": "Service Name",
-          "description": "Detailed service description",
-          "price": "$XXX - $X,XXX"
-        }
-      ],
-      "reviews": [
-        {
-          "id": "review-id",
-          "author": "First Name L.",
-          "rating": number,
-          "date": "Recent Date",
-          "content": "Detailed review content"
-        }
-      ]
-    }
-  ]
-}`;
+1. Overview of the art appraisal services in ${city}
+2. List of top art appraisers with:
+   - Business name and contact details
+   - Areas of expertise and specialties
+   - Years of experience
+   - Certifications and credentials
+   - Types of services offered
+   - Typical pricing ranges
+3. Information about:
+   - Business hours
+   - Service areas
+   - Customer reviews and ratings
+
+Use realistic but fictional data and format the response in a clear, readable way.`;
 
     return this.makeRequest(prompt, 'art_appraiser', {
       model: 'sonar',
-      maxTokens: 2000,
+      max_tokens: 2000,
       temperature: 0.1
-    });
-  }
-
-  validateArtAppraiserData(data) {
-    // Basic structure validation
-    if (!data.city || !data.state || !data.seo || !Array.isArray(data.appraisers)) {
-      console.error('[PERPLEXITY] Invalid data structure:', data);
-      throw new Error('Invalid art appraiser data structure');
-    }
-
-    // SEO validation
-    if (!data.seo.title || !data.seo.description || !Array.isArray(data.seo.keywords)) {
-      console.error('[PERPLEXITY] Invalid SEO structure:', data.seo);
-      throw new Error('Invalid SEO data structure');
-    }
-
-    // Appraisers validation
-    data.appraisers.forEach((appraiser, index) => {
-      if (!appraiser.id || !appraiser.name || !appraiser.address) {
-        console.error('[PERPLEXITY] Invalid appraiser data:', appraiser);
-        throw new Error(`Invalid appraiser data at index ${index}`);
-      }
     });
   }
 
