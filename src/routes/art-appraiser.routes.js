@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const dataService = require('../services/art-appraiser/data.service');
 const storageService = require('../services/art-appraiser/storage.service');
-const citiesData = require('./cities.json');
+const citiesData = require('../services/art-appraiser/cities.json');
 
 // Process first city
 router.post('/process-first-city', async (req, res) => {
