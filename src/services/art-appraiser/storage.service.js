@@ -10,15 +10,17 @@ class ArtAppraiserStorageService {
    * @param {string} city 
    * @param {string} state 
    * @param {Object} data 
+   * @param {string} [type='data'] - Type of data being stored
    */
-  async storeData(city, state, data) {
+  async storeData(city, state, data, type = 'data') {
     const slug = this.createSlug(city);
-    const filePath = `${this.basePath}/${slug}/data.json`;
+    const filePath = `${this.basePath}/${slug}/${type}.json`;
 
     console.log('[ART-APPRAISER] Storing data:', {
       city,
       state,
-      path: filePath
+      path: filePath,
+      type
     });
     
     const storageData = {
@@ -27,7 +29,7 @@ class ArtAppraiserStorageService {
       data,
       timestamp: new Date().toISOString(),
       metadata: {
-        appraisers: data.appraisers?.length || 0,
+        type,
         city,
         state
       }
@@ -36,7 +38,7 @@ class ArtAppraiserStorageService {
     await contentStorage.storeContent(
       filePath,
       storageData,
-      { type: 'art_appraiser_data', city, state }
+      { type: `art_appraiser_${type}`, city, state }
     );
 
     return filePath;
