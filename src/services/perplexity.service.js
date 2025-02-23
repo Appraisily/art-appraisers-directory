@@ -23,7 +23,6 @@ class PerplexityService {
   async makeRequest(prompt, type, options = {}) {
     const {
       model = 'sonar',
-      max_tokens = 123,
       temperature = 0.2,
       top_p = 0.9,
       presence_penalty = 0,
@@ -39,13 +38,12 @@ class PerplexityService {
           { role: 'system', content: 'Be precise and concise.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens,
         temperature,
         top_p,
         search_domain_filter: null,
         return_images: false,
         return_related_questions: false,
-        search_recency_filter: "day",
+        search_recency_filter: "year",
         top_k: 0,
         stream: false,
         presence_penalty,
@@ -112,7 +110,12 @@ class PerplexityService {
     const prompt = `Create a detailed directory of art appraisers in ${city}, ${state}. Include:
 
 1. Overview of art appraisal services in ${city}
-2. Top art appraisers (3-5) with their specialties
+2. List as many art appraisers as possible with their:
+   - Name and business details
+   - Specialties and expertise
+   - Contact information
+   - Years in business
+   - Notable certifications
 3. Service areas and typical pricing
 4. Contact information and business hours
 
@@ -120,7 +123,6 @@ Keep the response concise and factual.`;
 
     return this.makeRequest(prompt, 'art_appraiser', {
       model: 'sonar',
-      max_tokens: 1000,
       temperature: 0.2,
       top_p: 0.9,
       presence_penalty: 0,

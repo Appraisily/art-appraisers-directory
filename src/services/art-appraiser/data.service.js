@@ -43,25 +43,26 @@ class ArtAppraiserDataService {
       // Store raw response for debugging
       await storageService.storeData(city, state, {
         type: 'raw_response',
-        data: rawResponse,
+        content: rawResponse,
         timestamp: new Date().toISOString()
       }, 'raw-response');
 
       console.log('[ART-APPRAISER] Processing insights');
 
-      // Try to parse the response
-      let parsedData;
-      try {
-        parsedData = JSON.parse(rawResponse);
-      } catch (parseError) {
-        console.error('[ART-APPRAISER] Failed to parse response:', {
-          error: parseError.message,
-          rawResponse: rawResponse.substring(0, 200) + '...'
-        });
-        throw new Error(`Failed to parse Perplexity response: ${parseError.message}`);
-      }
+      // Process the text response into structured data
+      const processedData = {
+        city,
+        state,
+        content: rawResponse,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          type: 'art_appraiser_data',
+          source: 'perplexity',
+          processedAt: new Date().toISOString()
+        }
+      };
 
-      return parsedData;
+      return processedData;
     } catch (error) {
       console.error('[ART-APPRAISER] Error generating city data:', error);
       throw error;
