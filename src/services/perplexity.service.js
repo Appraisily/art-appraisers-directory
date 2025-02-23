@@ -46,7 +46,8 @@ class PerplexityService {
           ],
           max_tokens: maxTokens,
           temperature,
-          top_p: topP
+          top_p: topP,
+          stream: false
         },
         {
           headers: {
@@ -56,11 +57,17 @@ class PerplexityService {
         }
       );
 
-      const result = response.data.choices[0]?.message?.content;
+      if (!response.data || !response.data.choices || !response.data.choices[0]) {
+        throw new Error('Invalid response structure from Perplexity API');
+      }
+
+      const result = response.data.choices[0].message.content;
 
       if (!result) {
         throw new Error('No content in Perplexity response');
       }
+
+      console.log('[PERPLEXITY] Raw response:', result.substring(0, 100) + '...');
 
       // For art appraiser data, validate the JSON structure
       if (type === 'art_appraiser') {
@@ -188,17 +195,20 @@ Return ONLY a valid JSON object with EXACTLY this structure:
   validateArtAppraiserData(data) {
     // Basic structure validation
     if (!data.city || !data.state || !data.seo || !Array.isArray(data.appraisers)) {
+      console.error('[PERPLEXITY] Invalid data structure:', data);
       throw new Error('Invalid art appraiser data structure');
     }
 
     // SEO validation
     if (!data.seo.title || !data.seo.description || !Array.isArray(data.seo.keywords)) {
+      console.error('[PERPLEXITY] Invalid SEO structure:', data.seo);
       throw new Error('Invalid SEO data structure');
     }
 
     // Appraisers validation
     data.appraisers.forEach((appraiser, index) => {
       if (!appraiser.id || !appraiser.name || !appraiser.address) {
+        console.error('[PERPLEXITY] Invalid appraiser data:', appraiser);
         throw new Error(`Invalid appraiser data at index ${index}`);
       }
     });
