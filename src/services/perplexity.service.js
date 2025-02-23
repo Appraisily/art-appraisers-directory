@@ -31,6 +31,20 @@ class PerplexityService {
     try {
       console.log(`[PERPLEXITY] Making ${type} request for prompt:`, prompt.substring(0, 100) + '...');
 
+      const requestData = {
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: maxTokens,
+        temperature,
+        top_p: topP,
+        stream: false
+      };
+
+      console.log('[PERPLEXITY] Request data:', JSON.stringify(requestData, null, 2));
+
       // For art appraiser data, use a structured prompt
       const systemPrompt = type === 'art_appraiser' ? 
         'You are an expert art appraiser data analyst. Return ONLY valid JSON matching the exact schema provided in the prompt.' : 
@@ -38,17 +52,7 @@ class PerplexityService {
 
       const response = await axios.post(
         this.apiUrl,
-        {
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: prompt }
-          ],
-          max_tokens: maxTokens,
-          temperature,
-          top_p: topP,
-          stream: false
-        },
+        requestData,
         {
           headers: {
             'Authorization': `Bearer ${this.apiKey}`,
@@ -56,6 +60,9 @@ class PerplexityService {
           }
         }
       );
+
+      console.log('[PERPLEXITY] Response status:', response.status);
+      console.log('[PERPLEXITY] Response data:', JSON.stringify(response.data, null, 2));
 
       if (!response.data || !response.data.choices || !response.data.choices[0]) {
         throw new Error('Invalid response structure from Perplexity API');
