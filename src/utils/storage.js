@@ -6,13 +6,14 @@ class ContentStorage {
     this.bucketName = 'directory-information';
     this.isInitialized = false;
     this.bucket = null;
+    this.projectId = process.env.PROJECT_ID || 'civil-forge-403609';
     console.log('[STORAGE] Initializing storage service with bucket:', this.bucketName);
   }
 
   async initialize() {
     try {
       console.log('[STORAGE] Attempting to connect to bucket:', this.bucketName);
-      const [bucket] = await this.storage.bucket(this.bucketName).get();
+      const bucket = this.storage.bucket(this.bucketName);
       await bucket.exists(); // Verify bucket access
       this.bucket = bucket;
       this.isInitialized = true;

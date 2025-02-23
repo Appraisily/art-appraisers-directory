@@ -1,7 +1,7 @@
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
 async function getSecret(name) {
-  const projectId = process.env.PROJECT_ID;
+  const projectId = process.env.PROJECT_ID || 'civil-forge-403609';
   if (!projectId) {
     throw new Error('PROJECT_ID environment variable is not set');
   }
