@@ -23,8 +23,8 @@ class PerplexityService {
   async makeRequest(prompt, type, options = {}) {
     const {
       model = 'sonar',
-      max_tokens = 1000,
-      temperature = 0.1,
+      max_tokens = 123,
+      temperature = 0.2,
       top_p = 0.9,
       presence_penalty = 0,
       frequency_penalty = 1
@@ -33,7 +33,7 @@ class PerplexityService {
     try {
       console.log(`[PERPLEXITY] Making ${type} request for prompt:`, prompt.substring(0, 100) + '...');
 
-      const requestData = {
+      const body = {
         model,
         messages: [
           { role: 'system', content: 'Be precise and concise.' },
@@ -42,27 +42,26 @@ class PerplexityService {
         max_tokens,
         temperature,
         top_p,
-        presence_penalty,
-        frequency_penalty,
         search_domain_filter: null,
         return_images: false,
         return_related_questions: false,
         search_recency_filter: "<string>",
         top_k: 0,
         stream: false,
+        presence_penalty,
+        frequency_penalty,
         response_format: null
       };
 
-      console.log('[PERPLEXITY] Request data:', JSON.stringify(requestData, null, 2));
+      console.log('[PERPLEXITY] Request body:', JSON.stringify(body, null, 2));
 
-      const response = await axios.post(
-        this.apiUrl,
-        requestData,
-        {
+      const response = await axios({
+        method: 'POST',
+        url: this.apiUrl,
+        data: body,
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         }
       });
 
@@ -104,8 +103,8 @@ Keep the response concise and factual.`;
 
     return this.makeRequest(prompt, 'art_appraiser', {
       model: 'sonar',
-      max_tokens: 1000,
-      temperature: 0.1,
+      max_tokens: 123,
+      temperature: 0.2,
       top_p: 0.9,
       presence_penalty: 0,
       frequency_penalty: 1
