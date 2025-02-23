@@ -31,6 +31,11 @@ class PerplexityService {
     try {
       console.log(`[PERPLEXITY] Making ${type} request for prompt:`, prompt.substring(0, 100) + '...');
 
+      // Define system prompt first
+      const systemPrompt = type === 'art_appraiser' ? 
+        'You are an expert art appraiser data analyst. Return ONLY valid JSON matching the exact schema provided in the prompt.' : 
+        'You are an art appraiser data analyst.';
+
       const requestData = {
         model,
         messages: [
@@ -44,11 +49,6 @@ class PerplexityService {
       };
 
       console.log('[PERPLEXITY] Request data:', JSON.stringify(requestData, null, 2));
-
-      // For art appraiser data, use a structured prompt
-      const systemPrompt = type === 'art_appraiser' ? 
-        'You are an expert art appraiser data analyst. Return ONLY valid JSON matching the exact schema provided in the prompt.' : 
-        'You are an art appraiser data analyst.';
 
       const response = await axios.post(
         this.apiUrl,
