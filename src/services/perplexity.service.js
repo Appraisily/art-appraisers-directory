@@ -23,9 +23,11 @@ class PerplexityService {
   async makeRequest(prompt, type, options = {}) {
     const {
       model = 'sonar',
-      max_tokens = 2000,
+      max_tokens = 1000,
       temperature = 0.1,
-      top_p = 0.9
+      top_p = 0.9,
+      presence_penalty = 0,
+      frequency_penalty = 0
     } = options;
 
     try {
@@ -40,21 +42,29 @@ class PerplexityService {
         max_tokens,
         temperature,
         top_p,
-        stream: false
+        stream: false,
+        presence_penalty,
+        frequency_penalty,
+        search_domain_filter: null,
+        return_images: false,
+        return_related_questions: false,
+        search_recency_filter: null,
+        top_k: 0,
+        response_format: null
       };
 
       console.log('[PERPLEXITY] Request data:', JSON.stringify(requestData, null, 2));
 
-      const response = await axios.post(
-        this.apiUrl,
-        requestData,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await axios({
+        method: 'POST',
+        url: this.apiUrl,
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        data: requestData
+      });
 
       console.log('[PERPLEXITY] Response status:', response.status);
       console.log('[PERPLEXITY] Response data:', JSON.stringify(response.data, null, 2));
@@ -102,8 +112,11 @@ Use realistic but fictional data and format the response in a clear, readable wa
 
     return this.makeRequest(prompt, 'art_appraiser', {
       model: 'sonar',
-      max_tokens: 2000,
+      max_tokens: 1000,
       temperature: 0.1
+      top_p: 0.9,
+      presence_penalty: 0,
+      frequency_penalty: 0
     });
   }
 
