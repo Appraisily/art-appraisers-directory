@@ -113,7 +113,7 @@ Use realistic but fictional data and format the response in a clear, readable wa
     return this.makeRequest(prompt, 'art_appraiser', {
       model: 'sonar',
       max_tokens: 1000,
-      temperature: 0.1
+      temperature: 0.1,
       top_p: 0.9,
       presence_penalty: 0,
       frequency_penalty: 0
