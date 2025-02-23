@@ -86,7 +86,24 @@ class PerplexityService {
       return result;
 
     } catch (error) {
-      console.error('[PERPLEXITY] API request failed:', error);
+      // Log detailed error information
+      console.error('[PERPLEXITY] API request failed:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        message: error.message
+      });
+
+      // Throw specific error based on response
+      if (error.response?.status === 401) {
+        throw new Error('Invalid Perplexity API key');
+      } else if (error.response?.status === 429) {
+        throw new Error('Rate limit exceeded for Perplexity API');
+      } else if (error.response?.data?.error) {
+        throw new Error(`Perplexity API error: ${error.response.data.error.message || error.response.data.error}`);
+      }
+
       throw error;
     }
   }
