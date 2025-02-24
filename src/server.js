@@ -2,6 +2,7 @@ const { port } = require('./config');
 const express = require('express');
 const contentStorage = require('./utils/storage');
 const perplexityService = require('./services/perplexity.service');
+const openAIService = require('./services/openai.service');
 const artAppraiserRoutes = require('./routes/art-appraiser.routes');
 
 async function initializeService(service, name) {
@@ -31,13 +32,15 @@ async function initialize() {
 
   const serviceStatus = {
     storage: false,
-    perplexity: false
+    perplexity: false,
+    openai: false
   };
 
   try {
     [serviceStatus.storage, serviceStatus.perplexity] = await Promise.all([
       initializeService(contentStorage, 'Storage'),
-      initializeService(perplexityService, 'Perplexity')
+      initializeService(perplexityService, 'Perplexity'),
+      initializeService(openAIService, 'OpenAI')
     ]);
   } catch (error) {
     console.error('[SERVER] Error initializing services:', error);
@@ -52,7 +55,8 @@ async function initialize() {
       status: 'ok',
       services: {
         storage: serviceStatus.storage ? 'connected' : 'disconnected',
-        perplexity: serviceStatus.perplexity ? 'connected' : 'disconnected'
+        perplexity: serviceStatus.perplexity ? 'connected' : 'disconnected',
+        openai: serviceStatus.openai ? 'connected' : 'disconnected'
       }
     });
   });
