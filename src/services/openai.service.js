@@ -68,22 +68,39 @@ class OpenAIService {
     if (!this.isInitialized) {
       throw new Error('OpenAI service not initialized');
     }
+    
+    const systemPrompt = version === 'v3' ? 
+      `You are an AI assistant that processes information about art appraisers and outputs it in a structured JSON format. Each appraiser entry should include:
+      - name (string)
+      - specialties (array of strings)
+      - pricing (array of strings or string)
+      - services_offered (array of strings)
+      - certifications (array of strings)
+      - years_in_business (string or number)
+      - city (string)
+      - state (string)
+      - phone (string)
+      - website (string)
+      - notes (string)
+      
+      Output only valid JSON that can be parsed. Format as {"appraisers": [...]}` 
+      : "You are an expert content enhancer specializing in antiques and art valuation. Your task is to enhance WordPress content while maintaining HTML structure and adding compelling CTAs. Return only the enhanced content with HTML formatting.";
 
     try {
       console.log(`[OPENAI] Sending request to enhance content (${version}) with keyword:`, keyword);
       
-      // Use o1-mini for v3, gpt-4o for others
-      const model = version === 'v3' ? 'o1-mini' : 'gpt-4o';
+      // Use o3-mini for v3, gpt-4o for others
+      const model = version === 'v3' ? 'o3-mini' : 'gpt-4o';
       
       // Use 'assistant' role for o1-mini, 'system' for others
-      const instructionRole = model === 'o1-mini' ? 'assistant' : 'system';
+      const instructionRole = model === 'o3-mini' ? 'assistant' : 'system';
       
       const completion = await this.openai.createChatCompletion({
         model,
         messages: [
           {
             role: instructionRole,
-            content: "You are an expert content enhancer specializing in antiques and art valuation. Your task is to enhance WordPress content while maintaining HTML structure and adding compelling CTAs. Return only the enhanced content with HTML formatting."
+            content: systemPrompt
           },
           {
             role: "user",
@@ -93,6 +110,16 @@ class OpenAIService {
       });
 
       const enhancedContent = completion.data.choices[0].message.content;
+      
+      // Validate JSON for v3 responses
+      if (version === 'v3') {
+        try {
+          JSON.parse(enhancedContent);
+        } catch (error) {
+          console.error('[OPENAI] Invalid JSON response:', error);
+          throw new Error('Response was not valid JSON');
+        }
+      }
       
       // Check for truncation
       if (completion.data.choices[0].finish_reason === 'length') {
