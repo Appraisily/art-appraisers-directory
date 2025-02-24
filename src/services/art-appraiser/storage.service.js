@@ -14,7 +14,9 @@ class ArtAppraiserStorageService {
    */
   async storeData(city, state, data, type = 'data') {
     const slug = this.createSlug(city);
-    const filePath = `${this.basePath}/${slug}/${type}.json`;
+    const filePath = type === 'structured-data' 
+      ? `${this.basePath}/${slug}.json`
+      : `${this.basePath}/${slug}/${type}.json`;
 
     console.log('[ART-APPRAISER] Storing data:', {
       city,
