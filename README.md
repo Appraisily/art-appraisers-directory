@@ -1,101 +1,97 @@
-# WordPress to Hugo Content Migration Service
+# Art Appraiser Directory Service
 
 ## Overview
-This service automates the process of migrating WordPress posts to Hugo markdown files. It reads WordPress post IDs from a Google Sheets document, retrieves the content via the WordPress REST API, and converts it to Hugo-compatible markdown files with proper front matter.
+This service creates and maintains a comprehensive directory of art appraisers across major US cities. It uses AI-powered data collection and processing to ensure accurate, structured information about art appraisal services.
 
 ## Core Features
 
-### 1. Google Sheets Integration
-- Reads WordPress post IDs from a specified Google Sheet
-- Tracks processing status
-- Uses Google Cloud's application default credentials
+### 1. Data Collection & Processing
+- Gathers detailed art appraiser information using Perplexity AI
+- Processes raw data into structured JSON format using OpenAI
+- Supports both single-city and batch processing
+- Intelligent data deduplication and skip logic
 
-### 2. WordPress Integration
-- Fetches post content using WordPress REST API
-- Retrieves post metadata and featured images
-- Preserves SEO settings and taxonomies
+### 2. Dual Storage Architecture
+#### City-Specific Storage (`cities/`)
+- Structured by city name
+- Maintains full metadata and processing history
+- Stores both raw and processed data
+- Includes timestamps and processing details
 
-### 3. Hugo Content Generation
-- Converts WordPress HTML to clean markdown
-- Generates proper Hugo front matter
-- Maintains image references and internal links
-- Preserves categories and tags
-- Creates organized content structure
+#### Global Storage (`Global/`)
+- Flat structure with city-named files
+- Contains only processed, structured data
+- Optimized for quick access and integration
+- Direct JSON format without metadata wrapper
 
-## Architecture
+### 3. API Endpoints
 
-### Project Structure
-```
-src/
-├── controllers/          # Request handlers
-│   └── worker.controller.js
-├── services/            # Core business logic
-│   ├── content/         # Content processing
-│   │   └── content.service.js
-│   ├── wordpress/       # WordPress integration
-│   │   ├── client.js
-│   │   └── post.service.js
-│   ├── hugo.service.js  # Hugo integration
-│   └── sheets.service.js
-├── utils/              # Utility functions
-│   ├── secrets.js
-│   ├── storage.js
-│   └── sheets.js
-└── config/            # Configuration
-    └── index.js
-```
-
-## API Endpoints
-
-### Content Processing
+#### Data Processing
 ```bash
-# Process WordPress posts from sheets
-POST /api/process
+# Process a single city
+POST /api/art-appraiser/process-structured-data/:city/:state
 
-# Get WordPress posts with pagination
-GET /api/wordpress/posts?page=1&perPage=10
+# Process all cities
+POST /api/art-appraiser/process-structured-data
+
+# Process raw city data
+POST /api/art-appraiser/process-cities
 ```
 
-## Deployment
+#### Data Retrieval
+```bash
+# Get city data
+GET /api/art-appraiser/:state/:city
 
-### Cloud Run Configuration
-- Memory: 1GB per instance
-- CPU: 1 core per instance
-- Auto-scaling: 1-10 instances
-- Region: us-central1
-- Platform: managed
-- Authentication: public access
+# List cities in state
+GET /api/art-appraiser/state/:state
 
-### CI/CD Pipeline
-- GitHub Actions workflow for automated deployment
-- Cloud Build configuration for manual deployments
-- Zero-downtime deployments
+# Search cities
+GET /api/art-appraiser/search
+```
 
-## Configuration
+### 4. Data Structure
+Each appraiser entry includes:
+- Name and business details
+- Specialties and expertise
+- Contact information
+- Years in business
+- Certifications
+- Service areas
+- Pricing information
 
-### Environment Variables
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `PROJECT_ID` | Google Cloud project ID | Yes |
-| `PORT` | Server port | No (default: 8080) |
+## Services Integration
 
-### Required Secrets
-| Secret Name | Description |
-|-------------|-------------|
-| `SHEETS_ID_SEO` | Google Sheets document ID |
-| `WORDPRESS_API_URL` | WordPress API URL |
-| `wp_username` | WordPress username |
-| `wp_app_password` | WordPress application password |
-| `service-account-json` | Google service account credentials |
+### 1. Perplexity AI
+- Used for initial data gathering
+- Provides comprehensive city-specific information
+- Real-time data updates and verification
+
+### 2. OpenAI
+- Structures raw data into consistent JSON format
+- Ensures data quality and completeness
+- Validates structured output
+
+### 3. Google Cloud Storage
+- Secure data storage and retrieval
+- Automatic versioning and backup
+- High availability and scalability
 
 ## Development
 
 ### Prerequisites
 - Node.js 18+
 - Google Cloud SDK
-- Access to required Google Cloud services
-- WordPress site with REST API access
-- Hugo (for local development)
+- Access to required API keys:
+  - OpenAI API key
+  - Perplexity API key
+- Google Cloud Storage bucket access
+
+### Environment Variables
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `PROJECT_ID` | Google Cloud project ID | Yes |
+| `PORT` | Server port (default: 8080) | No |
 
 ### Local Setup
 1. Clone the repository
@@ -103,7 +99,45 @@ GET /api/wordpress/posts?page=1&perPage=10
 3. Set up environment variables
 4. Run locally: `npm start`
 
-### Health Check
+## API Response Format
+
+### Successful Response
+```json
+{
+  "success": true,
+  "data": {
+    "appraisers": [
+      {
+        "name": "Example Appraisers",
+        "specialties": ["Fine Art", "Antiques"],
+        "pricing": ["$350/hour", "$2,500/day"],
+        "services_offered": ["Insurance", "Estate"],
+        "certifications": ["ASA", "USPAP"],
+        "years_in_business": 25,
+        "city": "New York",
+        "state": "NY",
+        "phone": "212-555-0123",
+        "website": "www.example.com",
+        "notes": "Additional details"
+      }
+    ]
+  }
+}
+```
+
+### Error Response
+```json
+{
+  "success": false,
+  "error": "Error message",
+  "details": {
+    "code": "ERROR_CODE",
+    "message": "Detailed error message"
+  }
+}
+```
+
+## Health Check
 ```bash
 GET /health
 ```
@@ -112,43 +146,9 @@ Returns:
 {
   "status": "ok",
   "services": {
-    "sheets": "connected",
-    "wordpress": "connected",
-    "storage": "connected"
+    "storage": "connected",
+    "perplexity": "connected",
+    "openai": "connected"
   }
 }
 ```
-
-## Error Handling
-- Comprehensive error logging
-- Automatic retry mechanisms
-- Detailed error reporting
-
-## Storage
-Content and logs are stored in Google Cloud Storage:
-```
-images_free_reports/
-├── seo/
-│   ├── posts/
-│   │   └── {post-id}/
-│   │       ├── original.json
-│   │       └── markdown.json
-│   └── logs/
-│       └── {date}/
-│           └── errors.json
-```
-
-## Hugo Content Structure
-```
-content/
-├── _index.md          # Main landing page
-└── blog/              # Blog posts directory
-    ├── _index.md      # Blog listing page
-    └── posts/         # Individual posts
-        └── [slug].md  # Generated post files
-```
-
-## Limitations
-- WordPress API rate limits
-- Google Sheets API limits
-- Storage capacity constraints
