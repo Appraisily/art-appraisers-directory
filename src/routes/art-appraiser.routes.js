@@ -3,25 +3,43 @@ const router = express.Router();
 const dataService = require('../services/art-appraiser/data.service');
 const storageService = require('../services/art-appraiser/storage.service');
 const citiesData = require('../services/art-appraiser/cities.json');
+const CITIES_TO_PROCESS = 5;
 
-// Process first city
-router.post('/process-first-city', async (req, res) => {
+// Process first 5 cities
+router.post('/process-cities', async (req, res) => {
   try {
-    const firstCity = citiesData.cities[0];
-    console.log('[ART-APPRAISER] Processing first city:', firstCity.name);
+    const citiesToProcess = citiesData.cities.slice(0, CITIES_TO_PROCESS);
+    console.log(`[ART-APPRAISER] Processing first ${CITIES_TO_PROCESS} cities`);
 
-    // Generate and store data
-    const data = await dataService.getCityData(firstCity.name, firstCity.state);
+    const results = [];
+    for (const city of citiesToProcess) {
+      console.log('[ART-APPRAISER] Processing city:', city.name);
+      try {
+        const data = await dataService.getCityData(city.name, city.state);
+        results.push({
+          city: city.name,
+          state: city.state,
+          success: true,
+          data: data
+        });
+      } catch (error) {
+        console.error(`[ART-APPRAISER] Error processing ${city.name}:`, error);
+        results.push({
+          city: city.name,
+          state: city.state,
+          success: false,
+          error: error.message
+        });
+      }
+    }
 
     res.json({
       success: true,
-      message: 'Successfully processed first city',
-      city: firstCity.name,
-      state: firstCity.state,
-      data: data.data
+      message: `Processed ${CITIES_TO_PROCESS} cities`,
+      results
     });
   } catch (error) {
-    console.error('[ART-APPRAISER] Error processing first city:', error);
+    console.error('[ART-APPRAISER] Error processing cities:', error);
     res.status(500).json({
       success: false,
       error: error.message

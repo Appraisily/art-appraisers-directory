@@ -122,7 +122,7 @@ class PerplexityService {
 Keep the response concise and factual.`;
 
     return this.makeRequest(prompt, 'art_appraiser', {
-      model: 'sonar',
+      model: 'sonar-reasoning-pro',
       temperature: 0.2,
       top_p: 0.9,
       presence_penalty: 0,
