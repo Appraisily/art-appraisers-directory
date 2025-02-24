@@ -13,15 +13,15 @@ class StructuredDataService {
       console.log('[STRUCTURED-DATA] Processing city:', { city, state });
 
       // Get raw data from storage
-      const rawData = await storageService.getData(city, state);
-      if (!rawData || !rawData.content) {
+      const data = await storageService.getData(city, state);
+      if (!data || !data.data || !data.data.content) {
         throw new Error('No raw data found for city');
       }
 
       // Create prompt with the raw data
       const prompt = structuredDataPrompt.replace(
         '[DATA BEGINS]\n\nHere is the information about art appraisers we\'ve collected:',
-        `[DATA BEGINS]\n\nHere is the information about art appraisers in ${city}, ${state}:\n\n${rawData.content}`
+        `[DATA BEGINS]\n\nHere is the information about art appraisers in ${city}, ${state}:\n\n${data.data.content}`
       );
 
       // Process with OpenAI
@@ -32,7 +32,15 @@ class StructuredDataService {
       await storageService.storeData(
         city,
         state,
-        { structuredData, timestamp: new Date().toISOString() },
+        { 
+          data: JSON.parse(structuredData),
+          timestamp: new Date().toISOString(),
+          metadata: {
+            source: 'openai',
+            version: 'v3',
+            originalDataTimestamp: data.timestamp
+          }
+        },
         'structured-data'
       );
 
