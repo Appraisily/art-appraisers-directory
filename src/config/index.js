@@ -3,7 +3,7 @@ const port = process.env.PORT || 8080;
 module.exports = {
   port,
   secretNames: {
-    openAiKey: 'OPEN_AI_API_KEY',
+    openAiKey: 'OPENAI_API_KEY',
     perplexityKey: 'PERPLEXITY_API_KEY'
   }
 };
