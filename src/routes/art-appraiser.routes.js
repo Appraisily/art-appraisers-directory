@@ -9,8 +9,18 @@ const citiesData = require('../services/art-appraiser/cities.json');
 router.post('/process-structured-data/:city/:state', async (req, res) => {
   try {
     const { city, state } = req.params;
-    console.log('[ART-APPRAISER] Processing structured data for:', { city, state });
+    
+    // Check if structured data already exists
+    const exists = await storageService.hasStructuredData(city, state);
+    if (exists) {
+      return res.json({
+        success: true,
+        message: `Structured data already exists for ${city}, ${state}`,
+        skipped: true
+      });
+    }
 
+    console.log('[ART-APPRAISER] Processing structured data for:', { city, state });
     const data = await structuredDataService.processCity(city, state);
     
     res.json({
@@ -33,10 +43,25 @@ router.post('/process-structured-data', async (req, res) => {
     const citiesToProcess = citiesData.cities;
     console.log(`[ART-APPRAISER] Processing structured data for ${citiesToProcess.length} cities`);
 
+    const skipped = [];
     const results = [];
+    const errors = [];
+
     for (const city of citiesToProcess) {
       console.log('[ART-APPRAISER] Processing structured data for:', city.name);
       try {
+        // Check if structured data already exists
+        const exists = await storageService.hasStructuredData(city.name, city.state);
+        if (exists) {
+          skipped.push({
+            city: city.name,
+            state: city.state,
+            reason: 'Data already exists'
+          });
+          continue;
+        }
+
+        // Process new data
         const data = await structuredDataService.processCity(city.name, city.state);
         results.push({
           city: city.name,
@@ -46,7 +71,7 @@ router.post('/process-structured-data', async (req, res) => {
         });
       } catch (error) {
         console.error(`[ART-APPRAISER] Error processing structured data for ${city.name}:`, error);
-        results.push({
+        errors.push({
           city: city.name,
           state: city.state,
           success: false,
@@ -58,7 +83,14 @@ router.post('/process-structured-data', async (req, res) => {
     res.json({
       success: true,
       message: `Processed structured data for ${citiesToProcess.length} cities`,
-      results
+      processed: results.length,
+      skipped: skipped.length,
+      errors: errors.length,
+      details: {
+        processed: results,
+        skipped,
+        errors
+      }
     });
   } catch (error) {
     console.error('[ART-APPRAISER] Error processing structured data:', error);
