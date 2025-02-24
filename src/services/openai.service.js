@@ -1,17 +1,17 @@
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 const { getSecret } = require('../utils/secrets');
 const { secretNames } = require('../config');
 
 class OpenAIService {
   constructor() {
     this.isInitialized = false;
+    this.openai = null;
   }
 
   async initialize() {
     try {
       const apiKey = await getSecret(secretNames.openAiKey);
-      const configuration = new Configuration({ apiKey });
-      this.openai = new OpenAIApi(configuration);
+      this.openai = new OpenAI({ apiKey });
       this.isInitialized = true;
       console.log('[OPENAI] Successfully initialized');
     } catch (error) {
@@ -28,7 +28,7 @@ class OpenAIService {
     try {
       console.log('[OPENAI] Generating image with prompt:', prompt);
       
-      const response = await this.openai.createImage({
+      const response = await this.openai.images.generate({
         model: "dall-e-3",
         prompt,
         n: 1,
@@ -37,11 +37,11 @@ class OpenAIService {
         response_format: "url"
       });
 
-      if (!response.data || !response.data.data || !response.data.data[0] || !response.data.data[0].url) {
+      if (!response || !response.data || !response.data[0] || !response.data[0].url) {
         throw new Error('Invalid response from DALL-E 3');
       }
 
-      const imageUrl = response.data.data[0].url;
+      const imageUrl = response.data[0].url;
       console.log('[OPENAI] Successfully generated image:', imageUrl);
       
       return {
@@ -95,7 +95,7 @@ class OpenAIService {
       // Use 'assistant' role for o1-mini, 'system' for others
       const instructionRole = model === 'o3-mini' ? 'assistant' : 'system';
       
-      const completion = await this.openai.createChatCompletion({
+      const completion = await this.openai.chat.completions.create({
         model,
         messages: [
           {
@@ -109,7 +109,7 @@ class OpenAIService {
         ]
       });
 
-      const enhancedContent = completion.data.choices[0].message.content;
+      const enhancedContent = completion.choices[0].message.content;
       
       // Validate JSON for v3 responses
       if (version === 'v3') {
@@ -122,7 +122,7 @@ class OpenAIService {
       }
       
       // Check for truncation
-      if (completion.data.choices[0].finish_reason === 'length') {
+      if (completion.choices[0].finish_reason === 'length') {
         console.error(`[OPENAI] Response was truncated (${version})`);
         throw new Error(`Response truncated - content too long (${version})`);
       }
