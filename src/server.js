@@ -37,7 +37,7 @@ async function initialize() {
   };
 
   try {
-    [serviceStatus.storage, serviceStatus.perplexity] = await Promise.all([
+    [serviceStatus.storage, serviceStatus.perplexity, serviceStatus.openai] = await Promise.all([
       initializeService(contentStorage, 'Storage'),
       initializeService(perplexityService, 'Perplexity'),
       initializeService(openAIService, 'OpenAI')
